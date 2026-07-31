@@ -58,6 +58,20 @@ am_act(){  printf "  %s→%s %s\n" "$AM_C_OK" "$AM_C_0" "$1"; }
 
 # ── sizes ────────────────────────────────────────────────────────────────────
 am_du_kb(){ du -sk "$1" 2>/dev/null | cut -f1; }          # KiB, 0 if missing
+
+# Modification time as a unix timestamp. BSD (macOS) and GNU stat take different
+# flags for this and neither accepts the other's, so try both. Prints 0 if the
+# path is missing, so arithmetic on the result never breaks.
+am_mtime(){
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
+}
+
+# Days since $1 was modified. 0 if unknown.
+am_idle_days(){
+  local m; m=$(am_mtime "$1")
+  [ "${m:-0}" -gt 0 ] || { echo 0; return; }
+  echo $(( ( $(date +%s) - m ) / 86400 ))
+}
 am_mib(){   printf '%d' $(( ${1:-0} / 1024 )); }
 
 # Free space on the filesystem holding $1 (default /), in KiB. -Pk is the
@@ -82,11 +96,18 @@ am_allowlisted(){
 
 # Entries under $1 older than $2 days, excluding the newest $3. Newest-first
 # ordering then tail is what makes "keep N newest regardless of age" work.
+#
+# Deliberately avoids `find -printf`, which is GNU-only and silently produces
+# nothing on macOS — the mtime is fetched per entry through am_mtime instead so
+# this behaves identically on both platforms.
 am_stale_entries(){
-  local root="$1" days="${2:-30}" keep="${3:-5}"
+  local root="$1" days="${2:-30}" keep="${3:-5}" e
   [ -d "$root" ] || return 0
-  find "$root" -maxdepth 1 -mindepth 1 -mtime "+$days" -printf '%T@ %p\n' 2>/dev/null \
-    | sort -rn | tail -n +$((keep + 1)) | cut -d' ' -f2-
+  {
+    find "$root" -maxdepth 1 -mindepth 1 -mtime "+$days" -print 2>/dev/null | while IFS= read -r e; do
+      printf '%s %s\n' "$(am_mtime "$e")" "$e"
+    done
+  } | sort -rn | tail -n +$((keep + 1)) | cut -d' ' -f2-
 }
 
 # ── safe-tier cache reclaim ──────────────────────────────────────────────────

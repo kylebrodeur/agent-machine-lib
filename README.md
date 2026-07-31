@@ -2,7 +2,7 @@
 
 Shared bash primitives for keeping a machine alive when it runs fleets of AI coding agents.
 
-Extracted from [`mac-optimize`](https://github.com/kylebrodeur/mac-optimize) and
+Ships one shared library and one shared *tool*. Extracted from [`mac-optimize`](https://github.com/kylebrodeur/mac-optimize) and
 [`wsl-optimize`](https://github.com/kylebrodeur/wsl-optimize) once the two started
 duplicating each other. One file, `lib/common.sh`, no dependencies.
 
@@ -12,9 +12,10 @@ duplicating each other. One file, `lib/common.sh`, no dependencies.
 |---|---|
 | **Platform** | `am_detect_platform` sets `AM_PLATFORM` to `macos` \| `wsl2` \| `linux`; `am_is_macos`, `am_is_wsl` |
 | **Output** | `am_hdr` `am_ok` `am_no` `am_warn` `am_info` `am_dim` `am_row` `am_act` — colour only when stdout is a TTY, so logs stay clean |
-| **Sizes** | `am_du_kb` `am_mib` `am_free_kb` (POSIX `df -Pk`; BSD and GNU `df` agree on nothing else) |
+| **Sizes** | `am_du_kb` `am_mib` `am_free_kb` `am_mtime` `am_idle_days` (BSD and GNU `stat` take different flags and reject each other's; `find -printf` is GNU-only and silently returns nothing on macOS) (POSIX `df -Pk`; BSD and GNU `df` agree on nothing else) |
 | **Guards** | `am_in_use` (lsof; treats "no lsof" as in-use — a deletion guard must not guess), `am_allowlisted`, `am_stale_entries` (age gate **and** keep-newest-N) |
 | **Reclaim** | `am_reclaim_caches <dry> <emit_fn>` — the safe tier, identical on both platforms, with a per-platform tail |
+| **Tools** | `bin/worktree-audit` — genuinely platform-independent, so it lives here and both repos vendor it rather than forking copies that drift |
 | **Delegation** | `am_suggest_session_cleanup` — defers agent-transcript cleanup to `agent-session-kill` rather than half-reimplementing it |
 
 ## Design rule
