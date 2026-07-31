@@ -36,9 +36,28 @@ for a in "$@"; do
 done
 # Shared primitives: portable stat/mtime and platform detection.
 AM_TOOL=worktree-audit
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/common.sh" 2>/dev/null \
-  || . "$HOME/.local/lib/agent-machine/common.sh" 2>/dev/null \
-  || { printf "worktree-audit: cannot find lib/common.sh\n" >&2; exit 1; }
+# Locate lib/common.sh. This tool is vendored into several repos that each
+# install to their own libdir, so probe the known locations rather than assuming
+# one. $AM_LIB overrides everything.
+_am_find_lib() {
+  local self_dir; self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local c
+  for c in "${AM_LIB:-}" \
+           "$self_dir/../lib/common.sh" \
+           "$HOME/.local/lib/agent-machine/common.sh" \
+           "$HOME/.local/lib/wsl-optimize/common.sh" \
+           "$HOME/.local/lib/mac-optimize/common.sh"; do
+    [ -n "$c" ] && [ -r "$c" ] && { printf '%s\n' "$c"; return 0; }
+  done
+  return 1
+}
+_AM_LIB_PATH="$(_am_find_lib)" || {
+  printf '%s: cannot find lib/common.sh (set $AM_LIB to its path)\n' "${0##*/}" >&2
+  exit 1
+}
+# shellcheck source=/dev/null
+. "$_AM_LIB_PATH"
+
 
 # Default search root differs by platform convention. Override by passing ROOTs.
 if [ "${#ROOTS[@]}" -eq 0 ]; then
