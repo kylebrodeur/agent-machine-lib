@@ -133,8 +133,14 @@ am_reclaim_caches(){
   command -v pip  >/dev/null 2>&1 && _try "pip cache purge"                      pip cache purge
   command -v go   >/dev/null 2>&1 && _try "go clean -cache"                      go clean -cache
 
-  d="$HOME/.bun/install/cache"
-  [ -d "$d" ] && _try "bun install cache" rm -rf "$d"
+  # `bun pm cache rm` is the supported way; fall back to removing the dir only if
+  # bun is absent but its cache is still on disk.
+  if command -v bun >/dev/null 2>&1; then
+    _try "bun pm cache rm" bun pm cache rm
+  else
+    d="$HOME/.bun/install/cache"
+    [ -d "$d" ] && _try "bun install cache (bun not installed)" rm -rf "$d"
+  fi
 
   command -v cargo-cache >/dev/null 2>&1 && _try "cargo cache --autoclean" cargo cache --autoclean
 
