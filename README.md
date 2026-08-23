@@ -45,6 +45,17 @@ am_hdr "Caches"
 am_reclaim_caches 0 my_emit_fn
 ```
 
+## The family
+
+Part of a small family of tools for keeping machines healthy when they run fleets of AI coding agents:
+
+| Repo | What |
+|---|---|
+| **agent-machine-lib** (this) | The shared bash primitives — platform detection, deletion guards, safe-tier cache reclaim — plus the shared `worktree-audit` tool. Vendored into the two optimize repos. |
+| [`mac-optimize`](https://github.com/kylebrodeur/mac-optimize) | macOS disk/memory/shell hygiene — safe reclaim, git-worktree audit, Codex-session backup, and launchd watchers. |
+| [`wsl-optimize`](https://github.com/kylebrodeur/wsl-optimize) | The WSL2 sibling — OOM forensics, cgroup bounds, and `vhdx` compaction. |
+| [`agent-session-kill`](https://github.com/kylebrodeur/agent-session-kill) | Node/npm TUI that cleans agent session remnants; the optimize tools delegate transcript cleanup to it. |
+
 ## License
 
 MIT © 2026 Kyle Brodeur
