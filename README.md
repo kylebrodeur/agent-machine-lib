@@ -13,8 +13,8 @@ duplicating each other. `lib/common.sh`, no dependencies.
 | **Platform** | `am_detect_platform` sets `AM_PLATFORM` to `macos` \| `wsl2` \| `linux`; `am_is_macos`, `am_is_wsl` |
 | **Output** | `am_hdr` `am_ok` `am_no` `am_warn` `am_info` `am_dim` `am_row` `am_act` — colour only when stdout is a TTY, so logs stay clean |
 | **Sizes** | `am_du_kb` `am_mib` `am_free_kb` `am_mtime` `am_idle_days` (BSD and GNU `stat` take different flags and reject each other's; `find -printf` is GNU-only and silently returns nothing on macOS) (POSIX `df -Pk`; BSD and GNU `df` agree on nothing else) |
-| **Guards** | `am_in_use` (lsof; treats "no lsof" as in-use — a deletion guard must not guess), `am_allowlisted`, `am_stale_entries` (age gate **and** keep-newest-N) |
-| **Browsers** | `am_browser_cache_prune` (superseded browser revisions only — never one an installed `playwright-core` pins), `am_browser_cache_refs`, `am_browsers_json_revisions` |
+| **Guards** | `am_in_use` (process-using-a-dir check: `lsof` output **and** `pgrep -f`, because lsof's exit code is unreliable on macOS and it does not follow symlinks; treats "neither tool" as in-use — a deletion guard must not guess), `am_browser_dir_in_use` (symlink- and inode-aware variant for shared browser dirs), `am_allowlisted`, `am_stale_entries` (age gate **and** keep-newest-N) |
+| **Browsers** | `am_browser_cache_prune` (superseded browser revisions only — never one an installed `playwright-core` pins, never one in use), `am_browser_cache_roots` (per-platform cache paths, `AM_PLAYWRIGHT_CACHE`/`AM_PUPPETEER_CACHE` overridable), `am_browser_cache_refs`, `am_browsers_json_revisions` |
 | **Reclaim** | `am_reclaim_caches <dry> <emit_fn>` — the safe tier, identical on both platforms, with a per-platform tail |
 | **Tools** | `bin/worktree-audit` — genuinely platform-independent, so it lives here and both repos vendor it rather than forking copies that drift. `bin/browser-guard` — the same argument: one shared browser directory instead of a ~560 MB download per repo. |
 | **Delegation** | `am_suggest_session_cleanup` — defers agent-transcript cleanup to `agent-session-kill` rather than half-reimplementing it |
@@ -36,6 +36,23 @@ deletes only *superseded* revisions — never one an installed `playwright-core`
 pins (read from its `.links` map), never one in use, and it keeps newest-N as a
 rollback margin. `bin/browser-guard` goes further and makes one directory serve
 every repo, so the bytes exist once.
+
+## Written for other machines, not just the author's
+
+This library is developed on one Mac and must work on whatever a consumer runs. So:
+
+- **Derive, don't assume.** Playwright's browser layout differs per OS/arch
+  (`chrome-mac-arm64` vs `chrome-linux64` vs `chrome-win64`), and cache locations
+  differ too. Nothing is hardcoded — `pw_platform` reads `uname`, the layout comes
+  from Playwright's own registry table, and each cache root is probed per platform.
+- **Every path is overridable.** `AM_PLAYWRIGHT_CACHE`, `AM_PUPPETEER_CACHE`,
+  `BROWSER_GUARD_ROOT`, `BROWSER_KEEP_NEWEST`, `AM_LIB`, `AM_BROWSER_KEEP`. A user
+  with a non-default setup is served by an env var, never by an edit.
+- **A guard must not guess.** If a tool needed for a safety check is missing, the
+  answer is "in use", not "probably fine".
+- **Prove it on other platforms.** `test/browser-guard-platform.bash` asserts the
+  resolved layout for macOS arm64/x64, Linux x64/arm64, and Windows, by shadowing
+  `uname` — so the portability claim is tested, not asserted.
 
 ## Use
 
