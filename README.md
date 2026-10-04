@@ -2,9 +2,9 @@
 
 Shared bash primitives for keeping a machine alive when it runs fleets of AI coding agents.
 
-Ships one shared library and one shared *tool*. Extracted from [`mac-optimize`](https://github.com/kylebrodeur/mac-optimize) and
+Ships one shared library and shared *tools*. Extracted from [`mac-optimize`](https://github.com/kylebrodeur/mac-optimize) and
 [`wsl-optimize`](https://github.com/kylebrodeur/wsl-optimize) once the two started
-duplicating each other. One file, `lib/common.sh`, no dependencies.
+duplicating each other. `lib/common.sh`, no dependencies.
 
 ## What's in it
 
