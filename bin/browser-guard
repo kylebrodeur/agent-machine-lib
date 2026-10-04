@@ -204,7 +204,19 @@ materialise(){
   mkdir -p "$dir"
   # Symlink the platform dir ITSELF, replacing it -- not into a pre-made dir,
   # which would nest the link one level too deep and break executablePath.
-  ln -sfn "$src" "$dir/$sub"
+  #
+  # The headless shell is hardlink-copied rather than symlinked: symlinking it
+  # into ms-playwright would make the shared root depend on a cache that a
+  # manual `rm -rf` can wipe, which is the exact fragility this tool removes.
+  # Hardlinks share the bytes (no extra disk) but the tree stands alone. Falls
+  # back to a symlink if the source is on another filesystem.
+  if [ "$sub" = "chrome-headless-shell-mac-arm64" ]; then
+    if ! cp -al "$src" "$dir/$sub" 2>/dev/null; then
+      ln -sfn "$src" "$dir/$sub"
+    fi
+  else
+    ln -sfn "$src" "$dir/$sub"
+  fi
   touch "$dir/INSTALLATION_COMPLETE" "$dir/DEPENDENCIES_VALIDATED"
   am_act "$name r$rev linked -> $kind ($src)"
 }
