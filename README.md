@@ -53,6 +53,9 @@ This library is developed on one Mac and must work on whatever a consumer runs. 
 - **Prove it on other platforms.** `test/browser-guard-platform.bash` asserts the
   resolved layout for macOS arm64/x64, Linux x64/arm64, and Windows, by shadowing
   `uname` — so the portability claim is tested, not asserted.
+- **Simulation is not execution.** Those assertions prove the resolved *strings*
+  are right; they do not prove the tool runs on Linux. The real WSL2 run is
+  tracked at [wsl-optimize#1](https://github.com/kylebrodeur/wsl-optimize/issues/1).
 
 ## Use
 
